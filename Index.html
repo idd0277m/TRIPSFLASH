@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TRIPS Quiz App</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in {
+      animation: fadeIn 0.5s ease-in-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .correct {
+      background-color: #4ade80 !important;
+    }
+    .incorrect {
+      background-color: #f87171 !important;
+    }
+    .selected-option {
+      background-color: #9333ea !important;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <div class="max-w-2xl mx-auto py-10 px-4">
+    <div id="splash" class="text-center fade-in">
+      <h1 class="text-3xl font-bold mb-4">Welcome to the TRIPS Agreement Quiz</h1>
+      <p class="mb-4">You will be shown two answer options per question. Choose the one you believe is correct. After selection, an explanation will be shown.</p>
+      <button onclick="startQuiz()" class="bg-blue-600 text-white px-6 py-2 rounded-xl hover:bg-blue-700">Start</button>
+    </div>
+
+    <div id="quiz-container" class="bg-white p-6 rounded-xl shadow-xl fade-in hidden">
+      <div id="question" class="text-lg font-semibold mb-4"></div>
+      <div class="mt-2">
+        <div class="flex justify-between text-sm mb-1">
+          <div id="question-counter" class="text-gray-600">Question 1 of 10</div>
+          <div id="live-score" class="text-gray-600">Score: 0</div>
+        </div>
+        <div class="w-full bg-gray-300 rounded-full h-2.5 mb-4">
+          <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-1000 ease-linear" style="width: 100%"></div>
+        </div>
+      </div>
+      <div class="flex flex-col gap-4">
+        <button id="optionA" class="bg-blue-500 text-white py-2 px-4 rounded-xl hover:bg-blue-600"></button>
+        <button id="optionB" class="bg-blue-500 text-white py-2 px-4 rounded-xl hover:bg-blue-600"></button>
+      </div>
+      <div id="feedback" class="mt-6 text-sm text-gray-700"></div>
+      <div class="flex justify-between items-center mt-4">
+        <div class="text-sm text-gray-500">Time left: <span id="timer">75</span>s</div>
+        <div class="flex gap-2">
+          <button id="next-button" onclick="nextQuestion()" class="hidden text-sm px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700">Siguiente</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="result" class="hidden fade-in mt-6">
+      <h2 class="text-2xl font-bold mb-4 text-center">Quiz Complete!</h2>
+      <p id="score" class="text-center"></p>
+      <div class="mt-6">
+        <h3 class="text-xl font-semibold mb-2">Correct Answers</h3>
+        <table class="w-full mb-6 table-auto border border-green-300">
+          <thead>
+            <tr class="bg-green-100">
+              <th class="border p-2">Question</th>
+              <th class="border p-2">Your Answer</th>
+              <th class="border p-2">Explanation</th>
+            </tr>
+          </thead>
+          <tbody id="correct-table"></tbody>
+        </table>
+        <h3 class="text-xl font-semibold mb-2">Incorrect or Timed Out</h3>
+        <table class="w-full table-auto border border-red-300">
+          <thead>
+            <tr class="bg-red-100">
+              <th class="border p-2">Question</th>
+              <th class="border p-2">Your Answer</th>
+              <th class="border p-2">Explanation</th>
+            </tr>
+          </thead>
+          <tbody id="incorrect-table"></tbody>
+        </table>
+      </div>
+      <div class="text-center">
+        <button onclick="startQuiz()" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-xl hover:bg-green-600">Try Again</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Aquí se insertarán las preguntas (se usarán las 10 completas)
+    const questions = [
+  {
+    id: "1",
+    options: [
+      { label: "1a", text: "An IP right is only valid and enforceable in the territory in which it has been granted or otherwise acquired.", explanation: "Correct. This reflects the principle of territoriality: IP rights are valid only where granted, not globally (Module I).", correct: true },
+      { label: "1b", text: "Once an IP right has been granted or otherwise acquired in a territory of a WTO Member, it is protected globally.", explanation: "Incorrect. The Guide clarifies that IP rights are territorial and not automatically protected worldwide (Module I).", correct: false }
+    ]
+  },
+  {
+    id: "2",
+    options: [
+      { label: "2a", text: "The TRIPS Agreement provides for uniform levels of IP protection and enforcement in WTO Members.", explanation: "Incorrect. TRIPS sets minimum—not uniform—standards for IP protection (Module I).", correct: false },
+      { label: "2b", text: "The TRIPS Agreement provides for minimum standards of IP protection and enforcement in WTO Members.", explanation: "Correct. Article 1.1 sets minimum standards. Members may provide more extensive protection (Module I).", correct: true }
+    ]
+  },
+  {
+    id: "3",
+    options: [
+      { label: "3a", text: "The objectives of the TRIPS Agreement, as expressed in Article 7, are to prevent trade in counterfeit goods and foster economic development.", explanation: "Incorrect. Article 7 does not list counterfeiting as a goal. The focus is on innovation and technology dissemination (Module I).", correct: false },
+      { label: "3b", text: "The objectives of the TRIPS Agreement, as expressed in Article 7, are to contribute to the promotion of technological innovation and the transfer and dissemination of technology.", explanation: "Correct. Article 7 emphasizes promoting innovation and transfer of technology (Module I).", correct: true }
+    ]
+  },
+  {
+    id: "4",
+    options: [
+      { label: "4a", text: "The TRIPS Agreement contains a general exception, similar to GATT Art. XX and GATS Art. XIV, that allows Members to take measures inconsistent with the Agreement in pursuit of certain public policy goals if certain conditions are satisfied.", explanation: "Incorrect. TRIPS has no general exception equivalent to GATT Art. XX; measures must be TRIPS-consistent (Module I).", correct: false },
+      { label: "4b", text: "The TRIPS Agreement allows Members to take measures to protect public health and nutrition, provided that such measures are consistent with the Agreement", explanation: "Correct. Article 8 permits health measures consistent with TRIPS obligations (Module I).", correct: true }
+    ]
+  },
+  {
+    id: "5",
+    options: [
+      { label: "5a", text: "The TRIPS Agreement established entirely new international standards of protection for intellectual property rights.", explanation: "Incorrect. TRIPS builds on WIPO conventions and incorporates existing international standards (Module I).", correct: false },
+      { label: "5b", text: "The TRIPS Agreement incorporated and built on the substantive provisions of the main pre-existing WIPO conventions.", explanation: "Correct. TRIPS incorporates Berne and Paris Conventions as its foundation (Module I).", correct: true }
+    ]
+  },
+  {
+    id: "6",
+    options: [
+      { label: "6a", text: "Transition periods permitting Members to delay applying certain provisions of the TRIPS Agreement are currently available to developing and LDC Members.", explanation: "Incorrect. Only LDCs currently benefit from transition periods; not all developing countries (Module I).", correct: false },
+      { label: "6b", text: "Transition periods permitting Members to delay applying certain provisions of the TRIPS Agreement are available only to LDC Members.", explanation: "Correct. Article 66.1 limits transition periods to LDCs, as detailed in the Guide (Module I).", correct: true }
+    ]
+  },
+  {
+    id: "7",
+    options: [
+      { label: "7a", text: "In accordance with MFN treatment, a WTO Member that enters into an RTA providing for higher IP protection or enforcement standards than what TRIPS requires is obliged to extend those benefits to the nationals of all WTO Members.", explanation: "Correct. Article 4 mandates MFN treatment, requiring equal benefit sharing (Module I).", correct: true },
+      { label: "7b", text: "An exception to MFN treatment allows a WTO Member that enters into an RTA providing for higher IP protection or enforcement standards than what TRIPS requires to reserve those benefits to the nationals of the parties to the RTA.", explanation: "Incorrect. TRIPS does not permit MFN exceptions for RTAs with higher standards post-1995 (Module I).", correct: false }
+    ]
+  },
+  {
+    id: "8",
+    options: [
+      { label: "8a", text: "Members must ensure that enforcement procedures are available under their law for effective protection and enforcement of intellectual property rights", explanation: "Correct. Article 41 requires Members to provide effective enforcement mechanisms (Module I).", correct: true },
+      { label: "8b", text: "Members are not obliged to establish procedures and remedies at the national level for the enforcement of intellectual property rights", explanation: "Incorrect. TRIPS obliges Members to establish legal procedures for IP enforcement (Module I).", correct: false }
+    ]
+  },
+  {
+    id: "9",
+    options: [
+      { label: "9a", text: "Members are under a continuing obligation to notify new domestic IP laws and regulations, and amendments to previously notified laws and regulations, to the TRIPS Council.", explanation: "Correct. Members must notify new or amended IP laws to the TRIPS Council under Art. 63.2 (Module I).", correct: true },
+      { label: "9b", text: "Once a Member notifies its IP laws and regulations then in force to the TRIPS Council, the notification obligation under Article 63.2 has been exhausted.", explanation: "Incorrect. Article 63.2 imposes a continuing obligation to notify legal changes (Module I).", correct: false }
+    ]
+  },
+  {
+    id: "10",
+    options: [
+      { label: "10a", text: "Each intellectual property right (IPR) under the TRIPS Agreement is protected for a limited period of time, after which it falls into the public domain.", explanation: "Incorrect. Some IPRs like trademarks and GIs may have indefinite protection if conditions are met (Module I).", correct: false },
+      { label: "10b", text: "Some IPRs under the TRIPS Agreement can be protected indefinitely, as long as the conditions for eligibility and/or renewal are met.", explanation: "Correct. The Guide explains that certain IPRs, such as trademarks and GIs, can be renewed indefinitely (Module I).", correct: true }
+    ]
+  }
+];
+
+    let current = 0, score = 0, missed = 0, timer, countdown, answersLog = [], selected = null;
+    const optionA = document.getElementById("optionA");
+    const optionB = document.getElementById("optionB");
+    const nextBtn = document.getElementById("next-button");
+    const quizContainer = document.getElementById("quiz-container");
+    const result = document.getElementById("result");
+    const feedback = document.getElementById("feedback");
+    const timerEl = document.getElementById("timer");
+    const scoreEl = document.getElementById("score");
+
+    function playSound(type) {
+      const sound = document.getElementById("sound-" + type);
+      if (sound) sound.play();
+    }
+
+    function updateProgress(t) {
+      const bar = document.getElementById("progress-bar");
+      bar.style.width = (t / 75 * 100) + "%";
+    }
+
+    function updateStatus() {
+      document.getElementById("question-counter").textContent = `Question ${current + 1} of ${questions.length}`;
+      document.getElementById("live-score").textContent = `Score: ${score}`;
+    }
+
+    function startQuiz() {
+      document.getElementById("splash").classList.add("hidden");
+      current = 0;
+      score = 0;
+      missed = 0;
+      answersLog = [];
+      quizContainer.classList.remove("hidden");
+      result.classList.add("hidden");
+      loadQuestion();
+    }
+
+    function checkAnswer(option, button) {
+      clearInterval(countdown);
+      clearTimeout(timer);
+      document.querySelectorAll('#optionA, #optionB').forEach(btn => btn.classList.remove('selected-option'));
+      button.classList.add('selected-option');
+      const q = questions[current];
+      const isCorrect = option.correct;
+      answersLog[current] = {
+        question: `Question ${current + 1}`,
+        answer: option.label + ": " + option.text,
+        explanation: option.explanation,
+        correct: isCorrect
+      };
+      feedback.textContent = option.explanation;
+      if (isCorrect) { score++; playSound('correct'); } else { missed++; playSound('incorrect'); }
+      nextBtn.textContent = current === questions.length - 1 ? "Finalizar" : "Siguiente";
+      nextBtn.classList.remove("hidden");
+    }
+
+    function loadQuestion() {
+      clearInterval(countdown);
+      clearTimeout(timer);
+      feedback.textContent = "";
+      nextBtn.classList.add("hidden");
+      const q = questions[current];
+      const [a, b] = q.options;
+      optionA.textContent = a.label + ": " + a.text;
+      optionB.textContent = b.label + ": " + b.text;
+      optionA.onclick = () => checkAnswer(a, optionA);
+      optionB.onclick = () => checkAnswer(b, optionB);
+      document.querySelectorAll('#optionA, #optionB').forEach(btn => btn.classList.remove('selected-option'));
+      updateProgress(75);
+      updateStatus();
+      timerEl.textContent = 75;
+      countdown = setInterval(() => {
+        let time = parseInt(timerEl.textContent);
+        if (time > 0) {
+          timerEl.textContent = time - 1;
+          updateProgress(time - 1);
+        } else {
+          missed++;
+          playSound('timeout');
+          nextBtn.textContent = current === questions.length - 1 ? "Finalizar" : "Siguiente";
+          nextBtn.classList.remove("hidden");
+        }
+      }, 1000);
+    }
+
+    function nextQuestion() {
+      current++;
+      if (current >= questions.length) return showResults();
+      loadQuestion();
+    }
+
+    function showResults() {
+      playSound('finish');
+      quizContainer.classList.add("hidden");
+      result.classList.remove("hidden");
+      scoreEl.innerHTML = `Correct: ${score} / ${questions.length}<br/>Incorrect or timed out: ${missed}`;
+      displaySummary();
+    }
+
+    function displaySummary() {
+      const correctTable = document.getElementById("correct-table");
+      const incorrectTable = document.getElementById("incorrect-table");
+      correctTable.innerHTML = "";
+      incorrectTable.innerHTML = "";
+      answersLog.forEach((entry) => {
+        const row = `<tr>
+          <td class='border p-2'>${entry.question}</td>
+          <td class='border p-2'>${entry.answer}</td>
+          <td class='border p-2'>${entry.explanation}</td>
+        </tr>`;
+        if (entry.correct) {
+          correctTable.innerHTML += row;
+        } else {
+          incorrectTable.innerHTML += row;
+        }
+      });
+    }
+  </script>
+  <audio id="sound-correct" src="https://cdn.pixabay.com/audio/2022/03/15/audio_229d2edaa6.mp3"></audio>
+  <audio id="sound-incorrect" src="https://cdn.pixabay.com/audio/2022/03/15/audio_1f636b17aa.mp3"></audio>
+  <audio id="sound-timeout" src="https://cdn.pixabay.com/audio/2022/03/15/audio_a50ff099ff.mp3"></audio>
+  <audio id="sound-finish" src="https://cdn.pixabay.com/audio/2022/03/30/audio_6070e8723b.mp3"></audio>
+</body>
+</html>
